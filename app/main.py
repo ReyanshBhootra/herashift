@@ -4,7 +4,7 @@ from datetime import date
 from .db import employees, shifts, pto_requests, coverage_forecasts
 from .models import PTORequest, PTOPlanResponse, ScheduleOption
 from .scheduler import propose_options
-from .gemini_tools import summarize_hr_note
+from .call_gemini import summarize_hr_note
 from .azure_forecast import forecast_risk
 
 app = FastAPI(title="HeraShift API")

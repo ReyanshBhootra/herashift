@@ -1,57 +1,43 @@
-import os
-from dotenv import load_dotenv
-from pymongo import MongoClient
+# app/seed/seed_data.py
+"""
+Seed demo data for HeraShift.
+ALWAYS clears employees + shifts and inserts fresh data.
+"""
+
 from datetime import date, timedelta
-import uuid
+from app.db import get_db
 
-load_dotenv()
-MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-MONGO_DB = os.getenv("MONGO_DB", "herashift")
 
-client = MongoClient(MONGODB_URI)
-db = client[MONGO_DB]
+def seed_demo():
+    db = get_db()
+    employees = db["employees"]
+    shifts = db["shifts"]
 
-def clear_collections():
-    db.employees.delete_many({})
-    db.shifts.delete_many({})
-    db.pto_requests.delete_many({})
-    db.coverage_forecasts.delete_many({})
+    # Wipe old
+    employees.delete_many({})
+    shifts.delete_many({})
 
-def seed():
-    clear_collections()
-    teams = [
-        {"teamId": "team-1", "name": "Frontend"},
-        {"teamId": "team-2", "name": "Backend"},
-        {"teamId": "team-3", "name": "Infra"},
-    ]
-    employees = [
-        {"id": "emp-001", "name": "Alice", "teamId": "team-1", "role": "engineer", "skills": ["react", "ui"], "maxHoursPerWeek": 40},
-        {"id": "emp-002", "name": "Priya", "teamId": "team-1", "role": "engineer", "skills": ["css", "react"], "maxHoursPerWeek": 40},
-        {"id": "emp-003", "name": "Sam", "teamId": "team-2", "role": "backend", "skills": ["python", "api"], "maxHoursPerWeek": 40},
-        {"id": "emp-004", "name": "Reyansh", "teamId": "team-2", "role": "backend", "skills": ["db", "python"], "maxHoursPerWeek": 40},
-        {"id": "emp-005", "name": "Zara", "teamId": "team-3", "role": "devops", "skills": ["k8s", "ci"], "maxHoursPerWeek": 40},
-    ]
-    db.employees.insert_many(employees)
+    # Insert employees
+    employees.insert_many([
+        {"id": "emp-001", "name": "Alice",   "teamId": "team-1", "role": "engineer", "skills": ["react", "ui"], "maxHoursPerWeek": 40},
+        {"id": "emp-002", "name": "Priya",   "teamId": "team-1", "role": "engineer", "skills": ["css", "react"], "maxHoursPerWeek": 40},
+        {"id": "emp-003", "name": "Sam",     "teamId": "team-2", "role": "backend",  "skills": ["python", "api"], "maxHoursPerWeek": 40},
+        {"id": "emp-004", "name": "Reyansh", "teamId": "team-2", "role": "backend",  "skills": ["db", "python"], "maxHoursPerWeek": 40},
+        {"id": "emp-005", "name": "Zara",    "teamId": "team-3", "role": "devops",   "skills": ["k8s", "ci"], "maxHoursPerWeek": 40},
+    ])
 
-    start = date.today()
-    shifts = []
-    for t in teams:
-        for d in range(14):
-            dt = start + timedelta(days=d)
-            shift = {
-                "id": str(uuid.uuid4()),
-                "date": dt.isoformat(),
-                "teamId": t["teamId"],
-                "roleNeeded": "engineer" if t["teamId"] == "team-1" else ("backend" if t["teamId"] == "team-2" else "devops"),
-                "assignedEmployeeId": None
-            }
-            shifts.append(shift)
-    if shifts:
-        db.shifts.insert_many(shifts)
+    # Insert shifts (14 days window, 3 teams per day)
+    base = date.today() - timedelta(days=7)
+    rows = []
+    for i in range(14):
+        d = (base + timedelta(days=i)).isoformat()
+        rows.append({"date": d, "team": "team-1", "role": "engineer", "assignedEmployeeId": None})
+        rows.append({"date": d, "team": "team-2", "role": "backend",  "assignedEmployeeId": None})
+        rows.append({"date": d, "team": "team-3", "role": "devops",   "assignedEmployeeId": None})
+    shifts.insert_many(rows)
 
-    print("Seeded employees and shifts:")
-    print(f"employees: {db.employees.count_documents({})}")
-    print(f"shifts: {db.shifts.count_documents({})}")
+    print(f"✅ Demo data reseeded: employees=5, shifts={len(rows)}")
+
 
 if __name__ == "__main__":
-    seed()
+    seed_demo()

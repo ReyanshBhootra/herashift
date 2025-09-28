@@ -25,3 +25,20 @@ python -m app.seed.seed_data
 
 # Run app
 streamlit run app/streamlit_app.py
+
+
+PROJECT LAYOUT:
+herashift/
+│── app/
+│   ├── db.py
+│   ├── scheduler.py
+│   ├── streamlit_app.py
+│   ├── ...
+│   └── seed/
+│       └── seed_data.py
+│
+│── requirements.txt
+│── .gitignore
+│── README.md         <-- add this
+│── .env.example      <-- add this
+
